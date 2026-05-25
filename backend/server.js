@@ -18,6 +18,19 @@ app.get("/api", (req, res) => {
   res.json({ message: "API fonctionne !" });
 });
 
+app.get("/api/users", async (req, res) => {
+  try {
+    const users = await User.find();
+
+    res.json(users);
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      message: "Erreur serveur",
+    });
+  }
+});
 app.use(express.static(path.join(__dirname, "build")));
 
 app.get(/.*/, (req, res) => {
