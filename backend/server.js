@@ -17,21 +17,27 @@ mongoose.connect(process.env.MONGO_URI)
 app.get("/api", (req, res) => {
   res.json({ message: "API fonctionne !" });
 });
+app.use(express.static(path.join(__dirname, "build")));
 
 app.get("/api/users", async (req, res) => {
   try {
+    console.log("Route /api/users appelée");
+
     const users = await User.find();
+
+    console.log("Users trouvés:", users);
 
     res.json(users);
   } catch (err) {
-    console.log(err);
+    console.log("ERREUR USERS:", err);
 
     res.status(500).json({
       message: "Erreur serveur",
+      error: err.message
     });
   }
 });
-app.use(express.static(path.join(__dirname, "build")));
+
 
 app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, "build", "index.html"));
