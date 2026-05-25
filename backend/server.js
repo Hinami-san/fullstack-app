@@ -1,41 +1,50 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const dotenv = require("dotenv");
-
-dotenv.config();
+const cors = require("cors");
+const path = require("path");
+const User = require("./models/User");
+require("dotenv").config();
 
 const app = express();
+
+app.use(cors());
 app.use(express.json());
 
-const User = require("./models/User");
+mongoose.connect(process.env.MONGO_URI)
+.then(() => console.log("MongoDB connecté"))
+.catch((err) => console.log(err));
 
-async function startServer() {
+app.get("/api", (req, res) => {
+  res.json({ message: "API fonctionne !" });
+});
+app.use(express.static(path.join(__dirname, "build")));
+
+app.get("/api/users", async (req, res) => {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
+    console.log("Route /api/users appelée");
 
-    console.log("MongoDB connecté");
+    const users = await User.find();
 
-    app.get("/api/users", async (req, res) => {
-      try {
-        const users = await User.find();
-        res.json(users);
-      } catch (err) {
-        res.status(500).json({
-          message: "Erreur serveur",
-          error: err.message
-        });
-      }
-    });
+    console.log("Users trouvés:", users);
 
-    const PORT = process.env.PORT || 5000;
-
-    app.listen(PORT, () => {
-      console.log("Serveur lancé sur le port " + PORT);
-    });
-
+    res.json(users);
   } catch (err) {
-    console.log("Erreur MongoDB:", err.message);
-  }
-}
+    console.log("ERREUR USERS:", err);
 
-startServer();
+    res.status(500).json({
+      message: "Erreur serveur",
+      error: err.message
+    });
+  }
+});
+
+
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(__dirname, "build", "index.html"));
+});
+
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Serveur lancé sur le port ${PORT}`);
+});
