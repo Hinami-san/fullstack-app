@@ -2,72 +2,48 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
-require("dotenv").config();
-
 const User = require("./models/User");
+require("dotenv").config();
 
 const app = express();
 
-// Middlewares
 app.use(cors());
 app.use(express.json());
 
-/* =======================
-   TEST ROUTE
-======================= */
+mongoose.connect(process.env.MONGO_URI)
+.then(() => console.log("MongoDB connecté"))
+.catch((err) => console.log(err));
+
 app.get("/api", (req, res) => {
   res.json({ message: "API fonctionne !" });
 });
 
-/* =======================
-   USERS ROUTE
-======================= */
 app.get("/api/users", async (req, res) => {
   try {
+    console.log("Route /api/users appelée");
+
     const users = await User.find();
+
+    console.log("Users trouvés:", users);
+
     res.json(users);
   } catch (err) {
-    console.log("ERROR USERS:", err.message);
+    console.log("ERREUR USERS:", err);
+
     res.status(500).json({
       message: "Erreur serveur",
-      error: err.message,
+      error: err.message
     });
   }
 });
 
-/* =======================
-   REACT BUILD
-======================= */
-const buildPath = path.join(__dirname, "build");
 
-app.use(express.static(buildPath));
-
-app.get("/.*/", (req, res) => {
-  res.sendFile(path.join(buildPath, "index.html"));
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(__dirname, "build", "index.html"));
 });
 
-/* =======================
-   CONNECT DB + START SERVER
-======================= */
-async function start() {
-  try {
-    if (!process.env.MONGO_URI) {
-      throw new Error("MONGO_URI manquant dans .env");
-    }
+const PORT = process.env.PORT || 5000;
 
-    await mongoose.connect(process.env.MONGO_URI);
-
-    console.log("MongoDB connecté");
-
-    const PORT = process.env.PORT || 5000;
-
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log("Serveur lancé sur port " + PORT);
-    });
-
-  } catch (err) {
-    console.log("ERREUR CONNEXION DB:", err.message);
-  }
-}
-
-start();
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Serveur lancé sur le port ${PORT}`);
+});
